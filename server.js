@@ -1,14 +1,7 @@
+// Server stuff goes here
 var express = require('express');
 var app = express();
 var server = require('http').Server(app);
-
-// Socket.io
-var io = require('socket.io')(server, {
-    wsEngine: 'ws'
-});
-var players = {};
-
-
 
 app.use(express.static(__dirname + '/public'));
 
@@ -18,7 +11,15 @@ app.get('/', function (req, res) {
 
 var port = process.env.PORT || 1337;
 
-// Sockets lad
+// Store all players
+var players = {};
+
+// Socket.io
+var io = require('socket.io')(server, {
+    wsEngine: 'ws'
+});
+
+// Sockets logic goes here
 io.on('connection', function (socket) {
     console.log('a user connected');
 
