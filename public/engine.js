@@ -6,7 +6,7 @@ var config = {
         default: 'arcade',
         arcade: {
             gravity: {
-                y: 300
+                y: 0
             },
             debug: false
         }
@@ -36,11 +36,15 @@ function preload() {
 
 var platforms;
 var player;
+var stars;
 
 function create() {
 
     var self = this;
+
+    // Other players
     this.otherPlayers = this.physics.add.group();
+    self.physics.add.collider(this.otherPlayers, platforms);
 
     // Scene
     this.add.image(400, 300, 'sky');
@@ -54,6 +58,7 @@ function create() {
     platforms.create(750, 220, 'ground');
 
 
+    // Animations for moving
     this.anims.create({
         key: 'left',
         frames: this.anims.generateFrameNumbers('dude', {
@@ -86,14 +91,10 @@ function create() {
     // Keys
     cursors = this.input.keyboard.createCursorKeys();
 
-
     // Socket stuff
     this.socket = io();
 
-    this.socket.on('newPlayer', function (playerInfo) {
-        addOtherPlayers(self, playerInfo);
-    });
-
+    // Draw all players upon first joining
     this.socket.on('currentPlayers', function (players) {
         Object.keys(players).forEach(function (id) {
             if (players[id].playerId === self.socket.id) {
@@ -104,6 +105,12 @@ function create() {
         });
     });
 
+    // Draw new players that join
+    this.socket.on('newPlayer', function (playerInfo) {
+        addOtherPlayers(self, playerInfo);
+    });
+
+    // Remove any plauyers who disconnect
     this.socket.on('disconnect', function (playerId) {
         self.otherPlayers.getChildren().forEach(function (otherPlayer) {
             if (playerId === otherPlayer.playerId) {
@@ -112,6 +119,7 @@ function create() {
         });
     });
 
+    // Draw player movements
     this.socket.on('playerMoved', function (playerInfo) {
         self.otherPlayers.getChildren().forEach(function (otherPlayer) {
             if (playerInfo.playerId === otherPlayer.playerId) {
@@ -121,11 +129,57 @@ function create() {
         });
     });
 
+    stars = this.physics.add.group();
+    
+
+    // Draw the stars on initial connect
+    this.socket.on('starLocation', function (starLocations) {
+
+        for (var i = 0; i < starLocations.length; i++) {
+            if (starLocations[i].display == true) {
+                var star = self.physics.add.sprite(starLocations[i].x, starLocations[i].y, 'star');
+                
+                star.setGravityY(0);
+                star.refID = i;
+                stars.add(star);
+            }
+        }
+
+        self.physics.add.collider(stars, platforms);
+
+        self.physics.add.overlap(player, stars, function (player, star) {
+            console.log(star.refID);
+            star.disableBody(true, true);
+            this.socket.emit('starCollected', star.refID);
+        }, null, self);
+
+
+    });
+
+    // Remove stars collecetd by other users
+    this.socket.on('removeStar', function (id) {
+        stars.children.iterate(function (child) {
+
+            if (child.refID == id)
+                child.disableBody(true, true);
+
+        });
+    });
+
+    this.socket.on('replenishStars', function () {
+        stars.children.iterate(function (child) {
+
+            child.enableBody(true, child.x, child.y, true, true);
+
+        });
+    });
+
 }
 
 function update() {
 
-    
+    //console.log(this.input.mousePointer.x+","+this.input.mousePointer.y);
+
     if (player) {
         var direction;
         if (cursors.left.isDown) {
@@ -152,7 +206,7 @@ function update() {
             player.setVelocityY(-530);
         }
 
-        // emit player movement
+        // Tell the server about your movement
         var x = player.x;
         var y = player.y;
         if (player.oldPosition && (x !== player.oldPosition.x || y !== player.oldPosition.y)) {
@@ -163,16 +217,13 @@ function update() {
             });
         }
 
-        // save old position data
+        // Save old position
         player.oldPosition = {
             x: player.x,
             y: player.y,
             keydown: direction
         };
 
-        
-
-        
     }
 
 }
@@ -183,18 +234,16 @@ function addPlayer(self, playerInfo) {
 
     player.setBounce(0.2);
     player.setCollideWorldBounds(true);
-    player.body.setGravityY(300);
+    player.body.setGravityY(600);
 
     self.physics.add.collider(player, platforms);
 }
 
 function addOtherPlayers(self, playerInfo) {
-    const otherPlayer = self.add.sprite(playerInfo.x, playerInfo.y, 'dude');
+    var otherPlayer = self.add.sprite(playerInfo.x, playerInfo.y, 'dude');
 
-    otherPlayer.setTint(0x0000ff);
+    otherPlayer.setTint(0x7CC78F);
 
     otherPlayer.playerId = playerInfo.playerId;
-    self.otherPlayers.add(otherPlayer);
-
-    self.physics.add.collider(otherPlayer, platforms);
+    self.otherPlayers.add(otherPlayer);    
 }
