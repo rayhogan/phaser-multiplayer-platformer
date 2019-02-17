@@ -9,10 +9,10 @@ app.get('/', function (req, res) {
     res.sendFile(__dirname + '/index.html');
 });
 
-var port = process.env.PORT || 1337;
 
 // Store all players
 var players = {};
+var highScore = 0;
 
 var stars = []
 
@@ -27,7 +27,7 @@ class Star {
 
 
 stars.push(new Star(1, 24, 176, true));
-stars.push(new Star(2, 85, 127, true));
+stars.push(new Star(2, 73, 38, true));
 stars.push(new Star(3, 185, 73, true));
 stars.push(new Star(4, 301, 103, true));
 stars.push(new Star(5, 375, 41, true));
@@ -41,6 +41,8 @@ stars.push(new Star(12, 359, 484, true));
 stars.push(new Star(13, 484, 447, true));
 stars.push(new Star(14, 601, 496, true));
 stars.push(new Star(15, 738, 465, true));
+stars.push(new Star(16, 564, 327, true));
+stars.push(new Star(17, 722, 286, true));
 
 var starCount = stars.length;
 
@@ -66,6 +68,9 @@ io.on('connection', function (socket) {
     // send the players object to the new player
     socket.emit('currentPlayers', players);
 
+    // Send leaderboard
+    io.emit('leaderScore', highScore);
+
     // send the star object to the new player
     socket.emit('starLocation', stars);
 
@@ -88,12 +93,18 @@ io.on('connection', function (socket) {
     });
 
     // When a star is collected
-    socket.on('starCollected', function (id) {
+    socket.on('starCollected', function (id, score) {
 
         if (stars[id].display == true) {
             stars[id].display = false;
             io.emit('removeStar', id);
             starCount--;
+        }
+
+        if(score > highScore)
+        {
+            highScore = score;
+            io.emit('leaderScore', highScore);
         }
 
         if(starCount == 0)
@@ -102,13 +113,19 @@ io.on('connection', function (socket) {
                 element.display=true;
             });
             starCount = stars.length;
-            io.emit('replenishStars');
+            setTimeout(ReDrawStars, 2000);
+            ;
             
         }
     });
 });
 
 
+function ReDrawStars()
+{
+    io.emit('replenishStars');
+}
+var port = process.env.PORT || 1337;
 
 server.listen(port, function () {
     console.log(`Listening on ${server.address().port}`);

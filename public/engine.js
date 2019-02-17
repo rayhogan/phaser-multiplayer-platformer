@@ -37,6 +37,9 @@ function preload() {
 var platforms;
 var player;
 var stars;
+var score = 0;
+var scoreText;
+var leaderScore;
 
 function create() {
 
@@ -130,7 +133,7 @@ function create() {
     });
 
     stars = this.physics.add.group();
-    
+
 
     // Draw the stars on initial connect
     this.socket.on('starLocation', function (starLocations) {
@@ -138,7 +141,7 @@ function create() {
         for (var i = 0; i < starLocations.length; i++) {
             if (starLocations[i].display == true) {
                 var star = self.physics.add.sprite(starLocations[i].x, starLocations[i].y, 'star');
-                
+
                 star.setGravityY(0);
                 star.refID = i;
                 stars.add(star);
@@ -149,8 +152,12 @@ function create() {
 
         self.physics.add.overlap(player, stars, function (player, star) {
             console.log(star.refID);
+            score += 10;
             star.disableBody(true, true);
-            this.socket.emit('starCollected', star.refID);
+            this.socket.emit('starCollected', star.refID, score);
+
+            
+            scoreText.setText('Points: ' + score);
         }, null, self);
 
 
@@ -174,10 +181,28 @@ function create() {
         });
     });
 
+    this.socket.on('leaderScore', function (highscore) {
+        leaderScore.setText('Leader: ' + highscore);
+    });
+
+    //  Score boards
+    scoreText = this.add.text(16,545, 'Points: 0', {
+        fontSize: '20px',
+        fill: '#000',
+        fill: "#ffffff",
+    });
+
+    leaderScore = this.add.text(16, 570, 'Leader: 0', {
+        fontSize: '20px',
+        fill: '#000',
+        fill: "#ffffff",
+    });
+
 }
 
 function update() {
 
+    // Debug: write mouse co-ords to screen
     //console.log(this.input.mousePointer.x+","+this.input.mousePointer.y);
 
     if (player) {
@@ -245,5 +270,5 @@ function addOtherPlayers(self, playerInfo) {
     otherPlayer.setTint(0x7CC78F);
 
     otherPlayer.playerId = playerInfo.playerId;
-    self.otherPlayers.add(otherPlayer);    
+    self.otherPlayers.add(otherPlayer);
 }
