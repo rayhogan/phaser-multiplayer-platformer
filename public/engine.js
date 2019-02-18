@@ -113,7 +113,7 @@ function create() {
         addOtherPlayers(self, playerInfo);
     });
 
-    // Remove any plauyers who disconnect
+    // Remove any players who disconnect
     this.socket.on('disconnect', function (playerId) {
         self.otherPlayers.getChildren().forEach(function (otherPlayer) {
             if (playerId === otherPlayer.playerId) {
@@ -173,6 +173,7 @@ function create() {
         });
     });
 
+    // Replenish stars when the server tells us
     this.socket.on('replenishStars', function () {
         stars.children.iterate(function (child) {
 
@@ -181,11 +182,12 @@ function create() {
         });
     });
 
+    // Update the leader score
     this.socket.on('leaderScore', function (highscore) {
         leaderScore.setText('Leader: ' + highscore);
     });
 
-    //  Score boards
+    //  Initialize Score boards
     scoreText = this.add.text(16,545, 'Points: 0', {
         fontSize: '20px',
         fill: '#000',
@@ -253,7 +255,7 @@ function update() {
 
 }
 
-// Additional Methods
+// Add the player object
 function addPlayer(self, playerInfo) {
     player = self.physics.add.sprite(playerInfo.x, playerInfo.y, 'dude');
 
@@ -264,9 +266,11 @@ function addPlayer(self, playerInfo) {
     self.physics.add.collider(player, platforms);
 }
 
+// Add any additional players
 function addOtherPlayers(self, playerInfo) {
     var otherPlayer = self.add.sprite(playerInfo.x, playerInfo.y, 'dude');
 
+    // Set a tint so we can distinguish ourselves
     otherPlayer.setTint(0x7CC78F);
 
     otherPlayer.playerId = playerInfo.playerId;
