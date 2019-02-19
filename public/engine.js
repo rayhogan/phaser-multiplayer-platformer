@@ -49,13 +49,12 @@ function create() {
     this.otherPlayers = this.physics.add.group();
     self.physics.add.collider(this.otherPlayers, platforms);
 
-    // Scene
+    /* Scene */
+    // Sky
     this.add.image(400, 300, 'sky');
-
+    // Ground
     platforms = this.physics.add.staticGroup();
-
     platforms.create(400, 568, 'ground').setScale(2).refreshBody();
-
     platforms.create(600, 400, 'ground');
     platforms.create(50, 250, 'ground');
     platforms.create(750, 220, 'ground');
@@ -132,6 +131,7 @@ function create() {
         });
     });
 
+    // Create physics group to hold the stars
     stars = this.physics.add.group();
 
 
