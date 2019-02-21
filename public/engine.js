@@ -139,13 +139,18 @@ function create() {
     this.socket.on('starLocation', function (starLocations) {
 
         for (var i = 0; i < starLocations.length; i++) {
-            if (starLocations[i].display == true) {
-                var star = self.physics.add.sprite(starLocations[i].x, starLocations[i].y, 'star');
 
-                star.setGravityY(0);
-                star.refID = i;
-                stars.add(star);
+            var star = self.physics.add.sprite(starLocations[i].x, starLocations[i].y, 'star');
+
+            star.setGravityY(0);
+            star.refID = i;
+
+            if (starLocations[i].display != true) {
+                // If star should be hidden, then hide it
+                star.disableBody(true, true);
             }
+            stars.add(star);
+
         }
 
         self.physics.add.collider(stars, platforms);
@@ -156,7 +161,7 @@ function create() {
             star.disableBody(true, true);
             this.socket.emit('starCollected', star.refID, score);
 
-            
+
             scoreText.setText('Points: ' + score);
         }, null, self);
 
@@ -188,7 +193,7 @@ function create() {
     });
 
     //  Initialize Score boards
-    scoreText = this.add.text(16,545, 'Points: 0', {
+    scoreText = this.add.text(16, 545, 'Points: 0', {
         fontSize: '20px',
         fill: '#000',
         fill: "#ffffff",
